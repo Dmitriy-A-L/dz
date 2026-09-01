@@ -16,4 +16,5 @@ func main() {
 	fmt.Printf("%.2f USD = %.2f RUB\n", usdAmount, rubAmount)
 	fmt.Printf("%.2f EUR = %.2f RUB\n", eurAmount, eurToRubAmount)
 	fmt.Printf("Курс EUR/RUB: %.2f\n", eurToRub)
+
 }
