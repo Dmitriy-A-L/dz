@@ -16,6 +16,7 @@ func isValidCurrency(currency string) bool {
 	// запуск цикла для проверки введённой валюты
 	for _, c := range availableCurrencies {
 		// при совпадении возврат и завершение, иначе ошибка
+
 		if c == currency {
 			return true
 		}
@@ -65,28 +66,14 @@ func inputNumber(prompt string) float64 {
 	}
 }
 
-// подсчёт сумма из стоки в строку, дробное.
-// func calculate(amount float64, from string, to string) float64 {
-// 	// курсы валют (с map не понял)
-// 	rates := map[string]float64{
-// 		"USD": 90.0,
-// 		"EUR": 100.0,
-// 		"RUB": 1.0,
-// 	}
-
-// 	inRub := amount * rates[from]
-// 	result := inRub / rates[to]
-// 	return result
-// }
-
 // вход, ввод исходной валюты
 func main() {
-	const usdtoEur = 0.871
-	const usdtoRub = 84.1975
-	const eurtoRub = 96.6671
-	const rubtoEur = 0.0103
-	const eurtoUsd = 1.1481
-	const rubtoUsd = 0.0119
+	const usdToEur = 0.871
+	const usdToRub = 84.1975
+	const eurToRub = usdToRub / usdToEur
+	const eurToUsd = 1 / usdToEur
+	const rubToUsd = 1 / usdToRub
+	const rubToEur = 1 / eurToRub
 	fmt.Println("💰 Калькулятор валют")
 	fmt.Println("\nШаг 1: Выберите исходную валюту")
 	from := inputCurrency("Исходная валюта")
@@ -94,12 +81,14 @@ func main() {
 	fmt.Println("\nШаг 2: Введите сумму")
 	amount := inputNumber("Сумма: ")
 	// ввод целевой валюты
-retryTo:
 	fmt.Println("\nШаг 3: Выберите целевую валюту")
-	to := inputCurrency("Целевая валюта")
-	if from == to {
-		fmt.Println("\n Валюта совпадает с исходной, введите другую валюту")
-		goto retryTo
+	var to string
+	for {
+		to = inputCurrency("Целевая валюта")
+		if to != from {
+			break
+		}
+		fmt.Println("Валюта совпадает с исходной, введите другую")
 	}
 	// задаём переменную результата
 	var result float64
@@ -107,18 +96,17 @@ retryTo:
 	switch {
 	// ввод баксов и вывод евры
 	case from == "USD" && to == "EUR":
-		result = amount * usdtoEur
-		// etc
+		result = amount * usdToEur
 	case from == "USD" && to == "RUB":
-		result = amount * usdtoRub
+		result = amount * usdToRub
 	case from == "EUR" && to == "USD":
-		result = amount * eurtoUsd
+		result = amount * eurToUsd
 	case from == "EUR" && to == "RUB":
-		result = amount * eurtoRub
+		result = amount * eurToRub
 	case from == "RUB" && to == "USD":
-		result = amount * rubtoUsd
+		result = amount * rubToUsd
 	case from == "RUB" && to == "EUR":
-		result = amount * rubtoEur
+		result = amount * rubToEur
 	}
 	// пишем результат
 	fmt.Println("\n Результат:")
