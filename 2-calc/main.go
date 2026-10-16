@@ -10,13 +10,16 @@ import (
 )
 
 func main() {
-	var op string
+	reader := bufio.NewReader(os.Stdin)
+
 	fmt.Print("Введите операцию (AVG, SUM, MED): ")
-	fmt.Scan(&op)
-	var input string
+	opLine, _ := reader.ReadString('\n')
+	op := strings.TrimSpace(opLine)
+
 	fmt.Print("Введите числа через запятую (например: 2,10,9): ")
-	fmt.Scan(&input)
-	bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+
 	parts := strings.Split(input, ",")
 	nums := make([]float64, 0, len(parts))
 	for _, p := range parts {
@@ -53,11 +56,13 @@ func avg(nums []float64) float64 {
 	return sum(nums) / float64(len(nums))
 }
 func median(nums []float64) float64 {
-	sort.Float64s(nums)
+	sorted := make([]float64, len(nums))
+	copy(sorted, nums)
+	sort.Float64s(sorted)
 	n := len(nums)
 	mid := n / 2
 	if n%2 == 0 {
-		return (nums[mid-1] + nums[mid]) / 2
+		return (sorted[mid-1] + nums[mid]) / 2
 	}
-	return nums[mid]
+	return sorted[mid]
 }
