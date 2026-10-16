@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -26,4 +27,37 @@ func main() {
 		}
 		nums = append(nums, n)
 	}
+	if len(nums) == 0 {
+		fmt.Println("Список чисел пуст.")
+		return
+	}
+	switch strings.ToUpper(op) {
+	case "SUM":
+		fmt.Printf("Сумма: %.2f\n", sum(nums))
+	case "AVG":
+		fmt.Printf("Среднее: %.2f\n", avg(nums))
+	case "MED":
+		fmt.Printf("Медиана: %.2f\n", median(nums))
+	default:
+		fmt.Println("Неизвестная операция. Доступны: AVG, SUM, MED.")
+	}
+}
+func sum(nums []float64) float64 {
+	total := 0.0
+	for _, n := range nums {
+		total += n
+	}
+	return total
+}
+func avg(nums []float64) float64 {
+	return sum(nums) / float64(len(nums))
+}
+func median(nums []float64) float64 {
+	sort.Float64s(nums)
+	n := len(nums)
+	mid := n / 2
+	if n%2 == 0 {
+		return (nums[mid-1] + nums[mid]) / 2
+	}
+	return nums[mid]
 }
