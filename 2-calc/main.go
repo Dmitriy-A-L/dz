@@ -59,10 +59,10 @@ func median(nums []float64) float64 {
 	sorted := make([]float64, len(nums))
 	copy(sorted, nums)
 	sort.Float64s(sorted)
-	n := len(nums)
+	n := len(sorted)
 	mid := n / 2
 	if n%2 == 0 {
-		return (sorted[mid-1] + nums[mid]) / 2
+		return (sorted[mid-1] + sorted[mid]) / 2
 	}
 	return sorted[mid]
 }
