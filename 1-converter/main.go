@@ -10,8 +10,12 @@ import (
 
 // Список доступных валют
 var availableCurrencies = []string{"USD", "EUR", "RUB"}
+var ratesPerUSD = map[string]float64{
+	"USD": 1.0,
+	"EUR": 0.871,
+	"RUB": 84.1975,
+}
 
-// есть ли такая валюта в списке
 func isValidCurrency(currency string) bool {
 	// запуск цикла для проверки введённой валюты
 	for _, c := range availableCurrencies {
@@ -32,11 +36,11 @@ func inputCurrency(prompt string) string {
 	for {
 		// вставляем строку доступных валют
 		fmt.Printf("%s (доступно: %s): ", prompt, strings.Join(availableCurrencies, ", "))
-		// чтение, игнориирование ошибки
+		// чтение, игнорирование ошибки
 		input, _ := reader.ReadString('\n')
 		// затираем пробелы и делаем заглавными
 		input = strings.TrimSpace(strings.ToUpper(input))
-		// если валюта корректна - выводим
+		// если валюта корректна - вводим
 		if isValidCurrency(input) {
 			return input
 		}
@@ -68,12 +72,7 @@ func inputNumber(prompt string) float64 {
 
 // вход, ввод исходной валюты
 func main() {
-	const usdToEur = 0.871
-	const usdToRub = 84.1975
-	const eurToRub = usdToRub / usdToEur
-	const eurToUsd = 1 / usdToEur
-	const rubToUsd = 1 / usdToRub
-	const rubToEur = 1 / eurToRub
+
 	fmt.Println("💰 Калькулятор валют")
 	fmt.Println("\nШаг 1: Выберите исходную валюту")
 	from := inputCurrency("Исходная валюта")
@@ -90,24 +89,10 @@ func main() {
 		}
 		fmt.Println("Валюта совпадает с исходной, введите другую")
 	}
-	// задаём переменную результата
-	var result float64
-	// запускаем условия
-	switch {
-	// ввод баксов и вывод евры
-	case from == "USD" && to == "EUR":
-		result = amount * usdToEur
-	case from == "USD" && to == "RUB":
-		result = amount * usdToRub
-	case from == "EUR" && to == "USD":
-		result = amount * eurToUsd
-	case from == "EUR" && to == "RUB":
-		result = amount * eurToRub
-	case from == "RUB" && to == "USD":
-		result = amount * rubToUsd
-	case from == "RUB" && to == "EUR":
-		result = amount * rubToEur
-	}
+
+	amountInUSD := amount / ratesPerUSD[from]
+	result := amountInUSD * ratesPerUSD[to]
+
 	// пишем результат
 	fmt.Println("\n Результат:")
 	fmt.Printf("%.2f %s = %.2f %s\n", amount, from, result, to)
