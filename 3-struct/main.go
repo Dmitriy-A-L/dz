@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -22,6 +23,22 @@ func NewBin(id, name string, private bool) Bin {
 	}
 }
 
-func main() {
+func NewBinList() BinList {
+	return make(BinList, 0)
+}
 
+func main() {
+	bins := NewBinList()
+
+	bin1 := NewBin("1", "my-json", false)
+	bin2 := NewBin("2", "notes", true)
+
+	bins = append(bins, bin1, bin2)
+
+	fmt.Println("Список бинов:")
+	for _, b := range bins {
+
+		fmt.Printf("ID: %s | Name: %s | Private: %v | Создан: %v\n",
+			b.ID, b.Name, b.Private, b.CreatedAt)
+	}
 }
