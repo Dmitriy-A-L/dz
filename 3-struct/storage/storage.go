@@ -3,28 +3,42 @@ package storage
 import (
 	"app-demo/bins"
 	"encoding/json"
+	"errors"
 	"os"
 )
 
-func SaveBins(path string, list bins.BinList) error {
-	data, err := json.MarshalIndent(list, "", "  ")
+type Storage struct {
+	db Db
+}
+
+func New(db Db) *Storage {
+	return &Storage{db: db}
+}
+
+func (s *Storage) SaveBins(items []bins.Bin) error {
+	data, err := json.Marshal(items)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return s.db.Write(data)
 }
 
-func LoadBins(path string) (bins.BinList, error) {
-	data, err := os.ReadFile(path)
+func (s *Storage) LoadBins() ([]bins.Bin, error) {
+	data, err := s.db.Read()
 	if err != nil {
+		// Первый запуск: файла ещё нет — это не ошибка.
+		if errors.Is(err, os.ErrNotExist) {
+			return []bins.Bin{}, nil
+		}
 		return nil, err
 	}
-
-	var list bins.BinList
-	err = json.Unmarshal(data, &list)
-	if err != nil {
-		return nil, err
+	if len(data) == 0 {
+		return []bins.Bin{}, nil
 	}
 
-	return list, nil
+	var items []bins.Bin
+	if err := json.Unmarshal(data, &items); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

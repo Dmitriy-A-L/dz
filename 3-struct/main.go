@@ -9,26 +9,17 @@ import (
 )
 
 func main() {
-	binsList := bins.NewBinList()
-	binsList = append(binsList, bins.NewBin("1", "my-json", false))
-	binsList = append(binsList, bins.NewBin("2", "notes", true))
-
-	testFilePath := "test.json"
-	fmt.Printf("Файл %s является JSON? -> %v\n", testFilePath, file.IsJSON(testFilePath))
-
-	dbPath := "local_db.json"
-	err := storage.SaveBins(dbPath, binsList)
+	db := file.NewJsonDb("bins.json")
+	store := storage.New(db)
+	items, err := store.LoadBins()
 	if err != nil {
-		log.Fatal("Ошибка сохранения:", err)
+		log.Fatalf("Загрузка: %v", err)
 	}
-	fmt.Println(" Данные успешно сохранены в", dbPath)
-	loadedBins, err := storage.LoadBins(dbPath)
-	if err != nil {
-		log.Fatal("Ошибка загрузки:", err)
-	}
+	fmt.Printf("Загружено %d bins\n", len(items))
 
-	fmt.Println("\n Данные из локальной базы:")
-	for _, b := range loadedBins {
-		fmt.Printf("ID: %s | Name: %s | Private: %v\n", b.ID, b.Name, b.Private)
+	items = append(items, bins.Bin{ID: "1", Payload: []byte("hello")})
+	if err := store.SaveBins(items); err != nil {
+		log.Fatalf("Сохранение: %v", err)
 	}
+	fmt.Println("Сохранено: ok")
 }
