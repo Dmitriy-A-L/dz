@@ -17,9 +17,10 @@ func main() {
 	}
 	fmt.Printf("Загружено %d bins\n", len(items))
 
-	items = append(items, bins.Bin{ID: "1", Payload: []byte("hello")})
+	newBin := bins.NewBin("1", "hello", false)
 	if err := store.SaveBins(items); err != nil {
 		log.Fatalf("Сохранение: %v", err)
 	}
 	fmt.Println("Сохранено: ok")
+	fmt.Printf("Создан бин: ID=%s, Name=%s, CreatedAt=%v\n", newBin.ID, newBin.Name, newBin.CreatedAt)
 }

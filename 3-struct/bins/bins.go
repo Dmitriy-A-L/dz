@@ -1,6 +1,25 @@
 package bins
 
+import "time"
+
 type Bin struct {
-	ID      string `json:"id"`
-	Payload []byte `json:"payload"`
+	ID        string
+	Private   bool
+	CreatedAt time.Time
+	Name      string
+}
+
+type BinList []Bin
+
+func NewBin(id, name string, private bool) Bin {
+	return Bin{
+		ID:        id,
+		Private:   private,
+		CreatedAt: time.Now(),
+		Name:      name,
+	}
+}
+
+func NewBinList() BinList {
+	return make(BinList, 0)
 }

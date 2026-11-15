@@ -26,7 +26,7 @@ func (s *Storage) SaveBins(items []bins.Bin) error {
 func (s *Storage) LoadBins() ([]bins.Bin, error) {
 	data, err := s.db.Read()
 	if err != nil {
-		// Первый запуск: файла ещё нет — это не ошибка.
+
 		if errors.Is(err, os.ErrNotExist) {
 			return []bins.Bin{}, nil
 		}
