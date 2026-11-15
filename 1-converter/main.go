@@ -15,15 +15,18 @@ var rates = map[string]float64{
 	"EUR": 0.871,
 	"RUB": 84.1975,
 }
+
 var operations = make(map[string]func(float64) float64)
+
+var stdinReader = bufio.NewReader(os.Stdin)
 
 func init() {
 	for from := range rates {
 		for to := range rates {
 			if from != to {
-				f, t := from, to
-				operations[f+"_"+t] = func(amount float64) float64 {
-					return (amount / rates[f]) * rates[t]
+				from, to := from, to
+				operations[from+"_"+to] = func(amount float64) float64 {
+					return (amount / rates[from]) * rates[to]
 				}
 			}
 		}
@@ -40,29 +43,35 @@ func isValidCurrency(currency string) bool {
 }
 
 func inputCurrency(prompt string) string {
-	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Printf("%s (доступно: %s): ", prompt, strings.Join(availableCurrencies, ", "))
-		input, _ := reader.ReadString('\n')
+		input, err := stdinReader.ReadString('\n')
+		if err != nil {
+			fmt.Println("\nВвод завершён.")
+			os.Exit(0)
+		}
 		input = strings.TrimSpace(strings.ToUpper(input))
 		if isValidCurrency(input) {
 			return input
 		}
-		fmt.Println("❌ Ошибка: такой валюты нет. Попробуйте снова.")
+		fmt.Println("Ошибка: такой валюты нет. Попробуйте снова.")
 	}
 }
 
 func inputNumber(prompt string) float64 {
-	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print(prompt)
-		input, _ := reader.ReadString('\n')
+		input, err := stdinReader.ReadString('\n')
+		if err != nil {
+			fmt.Println("\nВвод завершён.")
+			os.Exit(0)
+		}
 		input = strings.TrimSpace(input)
 		number, err := strconv.ParseFloat(input, 64)
 		if err == nil && number > 0 {
 			return number
 		}
-		fmt.Println("❌ Ошибка: введите корректное положительное число.")
+		fmt.Println("Ошибка: введите корректное положительное число.")
 	}
 }
 
@@ -84,12 +93,14 @@ func main() {
 		}
 		fmt.Println("Валюта совпадает с исходной, введите другую")
 	}
+
 	operationKey := from + "_" + to
 	convertFunc, exists := operations[operationKey]
 	if !exists {
-		fmt.Println("Ошибка: операция для выбранной пары валют не найдена.")
+		fmt.Println("Операция для выбранной пары валют не найдена.")
 		return
 	}
+
 	result := convertFunc(amount)
 	fmt.Println("\nРезультат:")
 	fmt.Printf("%.2f %s = %.2f %s\n", amount, from, result, to)
