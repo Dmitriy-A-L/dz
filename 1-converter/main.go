@@ -24,7 +24,6 @@ func init() {
 	for from := range rates {
 		for to := range rates {
 			if from != to {
-				from, to := from, to
 				operations[from+"_"+to] = func(amount float64) float64 {
 					return (amount / rates[from]) * rates[to]
 				}
