@@ -18,6 +18,7 @@ func main() {
 	fmt.Printf("Загружено %d bins\n", len(items))
 
 	newBin := bins.NewBin("1", "hello", false)
+	items = append(items, newBin)
 	if err := store.SaveBins(items); err != nil {
 		log.Fatalf("Сохранение: %v", err)
 	}
