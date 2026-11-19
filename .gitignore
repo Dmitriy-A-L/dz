@@ -5,6 +5,8 @@
 *.dll
 *.so
 *.dylib
+bins.json
+
 
 # Test binary, built with `go test -c`
 *.test
@@ -16,7 +18,7 @@
 go.work.sum
 
 # env file
-.env
+*.env
 
 ### Windows
 # Windows thumbnail cache files
