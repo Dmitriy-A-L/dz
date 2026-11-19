@@ -1,16 +1,19 @@
 package file
 
-import (
-	"os"
-	"path/filepath"
-	"strings"
-)
+import "os"
 
-func ReadFile(path string) ([]byte, error) {
-	return os.ReadFile(path)
+type JsonDb struct {
+	path string
 }
 
-func IsJSON(path string) bool {
-	ext := filepath.Ext(path)
-	return strings.ToLower(ext) == ".json"
+func NewJsonDb(path string) *JsonDb {
+	return &JsonDb{path: path}
+}
+
+func (db *JsonDb) Read() ([]byte, error) {
+	return os.ReadFile(db.path)
+}
+
+func (db *JsonDb) Write(content []byte) error {
+	return os.WriteFile(db.path, content, 0o644)
 }
