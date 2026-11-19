@@ -16,7 +16,7 @@
 go.work.sum
 
 # env file
-.env
+*.env
 
 ### Windows
 # Windows thumbnail cache files
