@@ -4,6 +4,7 @@ import (
 	"app-demo/bins"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 )
 
@@ -41,4 +42,36 @@ func (s *Storage) LoadBins() ([]bins.Bin, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+func (s *Storage) AddBin(bin bins.Bin) error {
+	items, err := s.LoadBins()
+	if err != nil {
+		return err
+	}
+	items = append(items, bin)
+	return s.SaveBins(items)
+}
+
+func (s *Storage) DeleteBin(id string) error {
+	items, err := s.LoadBins()
+	if err != nil {
+		return err
+	}
+
+	updated := make([]bins.Bin, 0, len(items))
+	found := false
+	for _, item := range items {
+		if item.ID == id {
+			found = true
+			continue
+		}
+		updated = append(updated, item)
+	}
+
+	if !found {
+		return fmt.Errorf("бин с ID %s не найден в локальном списке", id)
+	}
+
+	return s.SaveBins(updated)
 }

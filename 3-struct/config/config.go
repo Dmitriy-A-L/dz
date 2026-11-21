@@ -12,12 +12,12 @@ type Config struct {
 }
 
 func Load() *Config {
-	err := godotenv.Load()
+	err := godotenv.Load("key.env")
 	if err != nil {
-		log.Println("Файл .env не найден")
+		log.Println("Файл key.env не найден")
 	}
 
 	return &Config{
-		Key: os.Getenv("KEY"),
+		Key: os.Getenv("KEY1"),
 	}
 }
