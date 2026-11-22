@@ -98,8 +98,17 @@ func (a *App) delete(id string) error {
 	if err := a.api.Delete(id); err != nil {
 		return err
 	}
-	fmt.Printf("Bin %s удалён\n", id)
-	return a.store.DeleteBin(id)
+	fmt.Printf("Bin %s удалён из облака\n", id)
+
+	if err := a.store.DeleteBin(id); err != nil {
+		if errors.Is(err, storage.ErrBinNotFound) {
+			fmt.Println("В локальном списке bins.json такой записи не было")
+			return nil
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (a *App) get(id string) error {

@@ -4,9 +4,10 @@ import (
 	"app-demo/bins"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 )
+
+var ErrBinNotFound = errors.New("бин не найден в локальном списке")
 
 type Storage struct {
 	db Db
@@ -70,7 +71,7 @@ func (s *Storage) DeleteBin(id string) error {
 	}
 
 	if !found {
-		return fmt.Errorf("бин с ID %s не найден в локальном списке", id)
+		return ErrBinNotFound
 	}
 
 	return s.SaveBins(updated)
