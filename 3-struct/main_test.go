@@ -2,120 +2,104 @@ package main
 
 import (
 	"app-demo/api"
+	"app-demo/bins"
 	"app-demo/config"
 	"app-demo/file"
 	"app-demo/storage"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 const testBaseURL = "https://api.jsonbin.io/v3/b"
 
-func setupTestApp(t *testing.T) (*App, func()) {
+func setupTestApp(t *testing.T) (*App, string) {
 	t.Helper()
 
 	cfg := config.Load()
 	if cfg.Key == "" {
-		t.Fatal("переменная KEY1 не задана в key.env")
+		t.Skip("пропуск теста: переменная KEY1 не задана в key.env")
 	}
 
-	tmpStorage, err := os.CreateTemp("", "test_bins_*.json")
-	if err != nil {
-		t.Fatalf("не удалось создать временный файл хранилища: %v", err)
-	}
-	tmpStorage.Close()
+	tempDir := t.TempDir()
+	dbPath := filepath.Join(tempDir, "bins_test.json")
 
 	app := &App{
 		api:   api.NewJsonDb(testBaseURL, cfg.Key),
-		store: storage.New(file.NewJsonDb(tmpStorage.Name())),
+		store: storage.New(file.NewJsonDb(dbPath)),
 	}
 
-	cleanup := func() {
-		os.Remove(tmpStorage.Name())
-	}
-
-	return app, cleanup
+	return app, tempDir
 }
 
-func createTempDataFile(t *testing.T, content string) (string, func()) {
+func createTempDataFile(t *testing.T, dir, filename, content string) string {
 	t.Helper()
 
-	tmpFile, err := os.CreateTemp("", "test_data_*.json")
-	if err != nil {
+	path := filepath.Join(dir, filename)
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("не удалось создать временный файл данных: %v", err)
 	}
-
-	if _, err := tmpFile.WriteString(content); err != nil {
-		t.Fatalf("ошибка записи во временный файл: %v", err)
-	}
-	tmpFile.Close()
-
-	cleanup := func() {
-		os.Remove(tmpFile.Name())
-	}
-
-	return tmpFile.Name(), cleanup
+	return path
 }
 
-// Тест на создание bin
-func TestCreateBin(t *testing.T) {
-	app, cleanupApp := setupTestApp(t)
-	defer cleanupApp()
+func getFirstBin(t *testing.T, store *storage.Storage) bins.Bin {
+	t.Helper()
 
-	dataFile, cleanupFile := createTempDataFile(t, `{"action": "create"}`)
-	defer cleanupFile()
-
-	err := app.create(dataFile, "test-create")
-	if err != nil {
-		t.Fatalf("ошибка при создании bin: %v", err)
-	}
-
-	items, err := app.store.LoadBins()
+	items, err := store.LoadBins()
 	if err != nil {
 		t.Fatalf("ошибка чтения хранилища: %v", err)
 	}
-	if len(items) != 1 {
-		t.Fatalf("ожидался 1 bin в хранилище, получено: %d", len(items))
+	for _, item := range items {
+		return item
 	}
 
-	createdID := items[0].ID
+	t.Fatal("ожидался хотя бы 1 bin в хранилище, но список пуст")
+	return bins.Bin{}
+}
 
-	defer func() {
-		_ = app.api.Delete(createdID)
-	}()
+// 1.Тест на создание bin
+func TestCreateBin(t *testing.T) {
+	app, tempDir := setupTestApp(t)
+	dataFile := createTempDataFile(t, tempDir, "create.json", `{"action": "create"}`)
 
-	if createdID == "" {
+	if err := app.create(dataFile, "test-create"); err != nil {
+		t.Fatalf("ошибка при создании bin: %v", err)
+	}
+
+	created := getFirstBin(t, app.store)
+
+	t.Cleanup(func() {
+		_ = app.api.Delete(created.ID)
+	})
+
+	if created.ID == "" {
 		t.Error("ID созданного bin не должен быть пустым")
 	}
-	if items[0].Name != "test-create" {
-		t.Errorf("ожидалось имя 'test-create', получено '%s'", items[0].Name)
+	if created.Name != "test-create" {
+		t.Errorf("ожидалось имя 'test-create', получено '%s'", created.Name)
 	}
 }
 
-// Тест на получение созданного bin
+// 2.Тест на получение созданного bin
 func TestGetBin(t *testing.T) {
-	app, cleanupApp := setupTestApp(t)
-	defer cleanupApp()
-
-	dataFile, cleanupFile := createTempDataFile(t, `{"user": "alice"}`)
-	defer cleanupFile()
+	app, tempDir := setupTestApp(t)
+	dataFile := createTempDataFile(t, tempDir, "get.json", `{"user": "alice"}`)
 
 	if err := app.create(dataFile, "test-get"); err != nil {
 		t.Fatalf("ошибка подготовки (create): %v", err)
 	}
-	items, _ := app.store.LoadBins()
-	binID := items[0].ID
+	created := getFirstBin(t, app.store)
 
-	defer func() {
-		_ = app.api.Delete(binID)
-	}()
+	t.Cleanup(func() {
+		_ = app.api.Delete(created.ID)
+	})
 
-	if err := app.get(binID); err != nil {
+	if err := app.get(created.ID); err != nil {
 		t.Fatalf("ошибка при получении bin: %v", err)
 	}
 
-	body, err := app.api.Get(binID)
+	body, err := app.api.Get(created.ID)
 	if err != nil {
 		t.Fatalf("ошибка запроса к API: %v", err)
 	}
@@ -124,32 +108,26 @@ func TestGetBin(t *testing.T) {
 	}
 }
 
-// Тест на обновление bin
+// 3.Тест на обновление bin
 func TestUpdateBin(t *testing.T) {
-	app, cleanupApp := setupTestApp(t)
-	defer cleanupApp()
-
-	oldFile, cleanupOld := createTempDataFile(t, `{"status": "draft"}`)
-	defer cleanupOld()
-
-	newFile, cleanupNew := createTempDataFile(t, `{"status": "published"}`)
-	defer cleanupNew()
+	app, tempDir := setupTestApp(t)
+	oldFile := createTempDataFile(t, tempDir, "old.json", `{"status": "draft"}`)
+	newFile := createTempDataFile(t, tempDir, "new.json", `{"status": "published"}`)
 
 	if err := app.create(oldFile, "test-update"); err != nil {
 		t.Fatalf("ошибка подготовки (create): %v", err)
 	}
-	items, _ := app.store.LoadBins()
-	binID := items[0].ID
+	created := getFirstBin(t, app.store)
 
-	defer func() {
-		_ = app.api.Delete(binID)
-	}()
+	t.Cleanup(func() {
+		_ = app.api.Delete(created.ID)
+	})
 
-	if err := app.update(binID, newFile); err != nil {
+	if err := app.update(created.ID, newFile); err != nil {
 		t.Fatalf("ошибка при обновлении bin: %v", err)
 	}
 
-	body, err := app.api.Get(binID)
+	body, err := app.api.Get(created.ID)
 	if err != nil {
 		t.Fatalf("ошибка получения обновленного bin: %v", err)
 	}
@@ -158,25 +136,21 @@ func TestUpdateBin(t *testing.T) {
 	}
 }
 
-// Тест на удаление bin
+// 4.Тест на удаление bin
 func TestDeleteBin(t *testing.T) {
-	app, cleanupApp := setupTestApp(t)
-	defer cleanupApp()
-
-	dataFile, cleanupFile := createTempDataFile(t, `{"temp": true}`)
-	defer cleanupFile()
+	app, tempDir := setupTestApp(t)
+	dataFile := createTempDataFile(t, tempDir, "delete.json", `{"temp": true}`)
 
 	if err := app.create(dataFile, "test-delete"); err != nil {
 		t.Fatalf("ошибка подготовки (create): %v", err)
 	}
-	items, _ := app.store.LoadBins()
-	binID := items[0].ID
+	created := getFirstBin(t, app.store)
 
-	defer func() {
-		_ = app.api.Delete(binID)
-	}()
+	t.Cleanup(func() {
+		_ = app.api.Delete(created.ID)
+	})
 
-	if err := app.delete(binID); err != nil {
+	if err := app.delete(created.ID); err != nil {
 		t.Fatalf("ошибка при удалении bin: %v", err)
 	}
 
@@ -188,7 +162,7 @@ func TestDeleteBin(t *testing.T) {
 		t.Errorf("ожидалось 0 записей после удаления, осталось: %d", len(itemsAfter))
 	}
 
-	if _, err := app.api.Get(binID); err == nil {
+	if _, err := app.api.Get(created.ID); err == nil {
 		t.Error("ожидалась ошибка при запросе удаленного bin, но API вернул данные")
 	}
 }
